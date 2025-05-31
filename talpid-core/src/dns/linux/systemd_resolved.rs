@@ -25,58 +25,59 @@ pub struct SystemdResolved {
 impl SystemdResolved {
     pub fn new() -> Result<Self> {
         let dbus_interface = DbusInterface::new()?.async_handle();
-
-        let systemd_resolved = SystemdResolved {
-            dbus_interface,
-            tunnel_index: 0,
-        };
-
-        Ok(systemd_resolved)
+        Ok(SystemdResolved { dbus_interface, tunnel_index: 0 })
+       // let systemd_resolved = SystemdResolved {
+       //     dbus_interface,
+       //     tunnel_index: 0,
+       // };
+       // Ok(systemd_resolved)
     }
 
     pub async fn set_dns(
         &mut self,
         _route_manager: RouteManagerHandle,
-        interface_name: &str,
-        servers: &[IpAddr],
+        _interface_name: &str,
+        _servers: &[IpAddr],
     ) -> Result<()> {
-        let tunnel_index = iface_index(interface_name)?;
-        self.tunnel_index = tunnel_index;
-
-        if let Err(error) = self.dbus_interface.disable_dot(self.tunnel_index).await {
-            log::error!("Failed to disable DoT: {}", error.display_chain());
-        }
-
-        if let Err(error) = self
-            .dbus_interface
-            .set_domains(tunnel_index, &[(".", true)])
-            .await
-        {
-            log::error!("Failed to set search domains: {}", error.display_chain());
-        }
-
-        let _ = self
-            .dbus_interface
-            .set_dns(self.tunnel_index, servers.to_vec())
-            .await?;
-
+        //Disabled dns setting for this custom Linux build.
+        //let tunnel_index = iface_index(interface_name)?;
+        //self.tunnel_index = tunnel_index;
         Ok(())
+
+//        if let Err(error) = self.dbus_interface.disable_dot(self.tunnel_index).await {
+//            log::error!("Failed to disable DoT: {}", error.display_chain());
+//        }
+//
+//        if let Err(error) = self
+//            .dbus_interface
+//            .set_domains(tunnel_index, &[(".", true)])
+//            .await
+//        {
+//            log::error!("Failed to set search domains: {}", error.display_chain());
+//        }
+//
+//        let _ = self
+//            .dbus_interface
+//            .set_dns(self.tunnel_index, servers.to_vec())
+//            .await?;
+//
+//        Ok(())
     }
 
     pub async fn reset(&mut self) -> Result<()> {
-        if let Err(error) = self
-            .dbus_interface
-            .set_domains(self.tunnel_index, &[])
-            .await
-        {
-            log::error!("Failed to set search domains: {}", error.display_chain());
-        }
-
-        let _ = self
-            .dbus_interface
-            .set_dns(self.tunnel_index, vec![])
-            .await?;
-
         Ok(())
-    }
+//        if let Err(error) = self
+//            .dbus_interface
+//            .set_domains(self.tunnel_index, &[])
+//            .await
+//        {
+//            log::error!("Failed to set search domains: {}", error.display_chain());
+//        }
+//
+//        let _ = self
+//            .dbus_interface
+//            .set_dns(self.tunnel_index, vec![])
+//            .await?;
+
+//    }
 }

@@ -36,51 +36,67 @@ pub struct StaticResolvConf {
 
 impl StaticResolvConf {
     pub fn new() -> Result<Self> {
-        restore_from_backup()?;
-
-        let state = Arc::new(Mutex::new(None));
-        let watcher = DnsWatcher::start(state.clone())?;
-
-        Ok(StaticResolvConf {
-            state,
-            _watcher: watcher,
-        })
+        // Optionally, stub out backup logic too
+        Ok(StaticResolvConf { state: Arc::new(Mutex::new(None)), _watcher: DnsWatcher { cancel_trigger: trigger().0 } })
     }
 
-    pub fn set_dns(&mut self, servers: Vec<IpAddr>) -> Result<()> {
-        let mut state = self.state.lock();
-        let new_state = match state.take() {
-            None => {
-                let backup = read_config()?;
-                write_backup(&backup)?;
-
-                State {
-                    backup,
-                    desired_dns: servers,
-                }
-            }
-            Some(previous_state) => State {
-                backup: previous_state.backup,
-                desired_dns: servers,
-            },
-        };
-
-        let new_config = new_state.desired_config();
-
-        *state = Some(new_state);
-
-        write_config(&new_config)
+    pub fn set_dns(&mut self, _servers: Vec<IpAddr>) -> Result<()> {
+        // DNS setting is disabled for this custom Linux build.
+        Ok(())
     }
 
     pub fn reset(&mut self) -> Result<()> {
-        if let Some(state) = self.state.lock().take() {
-            write_config(&state.backup)?;
-            let _ = fs::remove_file(RESOLV_CONF_BACKUP_PATH);
-        }
-
+        // DNS reset is disabled for this custom Linux build.
         Ok(())
     }
 }
+//impl StaticResolvConf {
+//    pub fn new() -> Result<Self> {
+//        restore_from_backup()?;
+//
+//        let state = Arc::new(Mutex::new(None));
+//        let watcher = DnsWatcher::start(state.clone())?;
+//
+//        Ok(StaticResolvConf {
+//            state,
+//            _watcher: watcher,
+//        })
+//    }
+//
+//    pub fn set_dns(&mut self, servers: Vec<IpAddr>) -> Result<()> {
+//        let mut state = self.state.lock();
+//        let new_state = match state.take() {
+//            None => {
+//                let backup = read_config()?;
+//                write_backup(&backup)?;
+//
+//                State {
+//                    backup,
+//                    desired_dns: servers,
+//                }
+//            }
+//            Some(previous_state) => State {
+//                backup: previous_state.backup,
+//                desired_dns: servers,
+//            },
+//        };
+//
+//        let new_config = new_state.desired_config();
+//
+//        *state = Some(new_state);
+//
+//        write_config(&new_config)
+//    }
+//
+//    pub fn reset(&mut self) -> Result<()> {
+//        if let Some(state) = self.state.lock().take() {
+//            write_config(&state.backup)?;
+//            let _ = fs::remove_file(RESOLV_CONF_BACKUP_PATH);
+//        }
+//
+//        Ok(())
+//    }
+//}
 
 struct State {
     backup: Config,

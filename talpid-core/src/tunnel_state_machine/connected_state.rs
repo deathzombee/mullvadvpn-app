@@ -153,56 +153,62 @@ impl ConnectedState {
         )
     }
 
-    fn set_dns(&self, shared_values: &mut SharedTunnelStateValues) -> Result<(), BoxedError> {
-        let dns_config: ResolvedDnsConfig = Self::resolve_dns(&self.metadata, shared_values);
-
-        #[cfg(not(target_os = "macos"))]
-        shared_values
-            .dns_monitor
-            .set(&self.metadata.interface, dns_config)
-            .map_err(BoxedError::new)?;
-
-        #[cfg(target_os = "macos")]
-        // We do not want to forward DNS queries to *our* local resolver if we do not run a local
-        // DNS resolver.
-        if !*LOCAL_DNS_RESOLVER {
-            log::debug!("Not enabling local DNS resolver");
-            shared_values
-                .dns_monitor
-                .set(&self.metadata.interface, dns_config)
-                .map_err(BoxedError::new)?;
-        } else {
-            log::debug!("Enabling local DNS resolver");
-            // Tell local DNS resolver to start forwarding DNS queries to whatever `dns_config`
-            // specifies as DNS.
-            shared_values.runtime.block_on(
-                shared_values
-                    .filtering_resolver
-                    .enable_forward(dns_config.addresses().collect()),
-            );
-        }
-
+    fn set_dns(&self, _shared_values: &mut SharedTunnelStateValues) -> Result<(), BoxedError> {
+        // DNS setting is disabled for this custom Linux build.
         Ok(())
     }
-
-    fn reset_dns(shared_values: &mut SharedTunnelStateValues) {
-        #[cfg(not(target_os = "macos"))]
-        if let Err(error) = shared_values.dns_monitor.reset_before_interface_removal() {
-            log::error!("{}", error.display_chain_with_msg("Unable to reset DNS"));
-        }
-
-        // On macOS, configure only the local DNS resolver
-        #[cfg(target_os = "macos")]
-        if !*LOCAL_DNS_RESOLVER {
-            if let Err(error) = shared_values.dns_monitor.reset_before_interface_removal() {
-                log::error!("{}", error.display_chain_with_msg("Unable to reset DNS"));
-            }
-        } else {
-            shared_values
-                .runtime
-                .block_on(shared_values.filtering_resolver.disable_forward());
-        }
+//    fn set_dns(&self, shared_values: &mut SharedTunnelStateValues) -> Result<(), BoxedError> {
+//        let dns_config: ResolvedDnsConfig = Self::resolve_dns(&self.metadata, shared_values);
+//
+//        #[cfg(not(target_os = "macos"))]
+//        shared_values
+//            .dns_monitor
+//            .set(&self.metadata.interface, dns_config)
+//            .map_err(BoxedError::new)?;
+//
+//        #[cfg(target_os = "macos")]
+//        // We do not want to forward DNS queries to *our* local resolver if we do not run a local
+//        // DNS resolver.
+//        if !*LOCAL_DNS_RESOLVER {
+//            log::debug!("Not enabling local DNS resolver");
+//            shared_values
+//                .dns_monitor
+//                .set(&self.metadata.interface, dns_config)
+//                .map_err(BoxedError::new)?;
+//        } else {
+//            log::debug!("Enabling local DNS resolver");
+//            // Tell local DNS resolver to start forwarding DNS queries to whatever `dns_config`
+//            // specifies as DNS.
+//            shared_values.runtime.block_on(
+//                shared_values
+//                    .filtering_resolver
+//                    .enable_forward(dns_config.addresses().collect()),
+//            );
+//        }
+//
+//        Ok(())
+//    }
+    fn reset_dns(_shared_values: &mut SharedTunnelStateValues) {
+        // DNS reset is disabled for this custom Linux build.
     }
+//    fn reset_dns(shared_values: &mut SharedTunnelStateValues) {
+//        #[cfg(not(target_os = "macos"))]
+//        if let Err(error) = shared_values.dns_monitor.reset_before_interface_removal() {
+//            log::error!("{}", error.display_chain_with_msg("Unable to reset DNS"));
+//        }
+//
+//        // On macOS, configure only the local DNS resolver
+//        #[cfg(target_os = "macos")]
+//        if !*LOCAL_DNS_RESOLVER {
+//            if let Err(error) = shared_values.dns_monitor.reset_before_interface_removal() {
+//                log::error!("{}", error.display_chain_with_msg("Unable to reset DNS"));
+//            }
+//        } else {
+//            shared_values
+//                .runtime
+//                .block_on(shared_values.filtering_resolver.disable_forward());
+//        }
+//    }
 
     fn reset_routes(
         #[cfg(target_os = "windows")] shared_values: &SharedTunnelStateValues,

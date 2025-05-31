@@ -75,55 +75,103 @@ impl Resolvconf {
             .unwrap_or_else(|_| false)
     }
 
-    pub fn set_dns(&mut self, interface: &str, servers: &[IpAddr]) -> Result<()> {
-        let record_name = format!("{interface}.mullvad");
-        let mut record_contents = String::new();
-
-        for address in servers {
-            record_contents.push_str("nameserver ");
-            record_contents.push_str(&address.to_string());
-            record_contents.push('\n');
-        }
-
-        let output = duct::cmd!(&self.resolvconf, "-a", &record_name)
-            .stdin_bytes(record_contents)
-            .stderr_capture()
-            .unchecked()
-            .run()
-            .map_err(Error::RunResolvconf)?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            return Err(Error::AddRecord { stderr });
-        }
-
-        self.record_names.insert(record_name);
-
+    pub fn set_dns(&mut self, _interface: &str, _servers: &[IpAddr]) -> Result<()> {
+        // DNS setting is disabled for this custom Linux build.
         Ok(())
     }
 
     pub fn reset(&mut self) -> Result<()> {
-        let mut result = Ok(());
-
-        for record_name in self.record_names.drain() {
-            let output = duct::cmd!(&self.resolvconf, "-d", &record_name, "-f")
-                .stderr_capture()
-                .unchecked()
-                .run()
-                .map_err(Error::RunResolvconf)?;
-
-            if !output.status.success() {
-                log::error!(
-                    "Failed to delete 'resolvconf' record '{}':\n{}",
-                    record_name,
-                    String::from_utf8_lossy(&output.stderr)
-                );
-                result = Err(Error::DeleteRecord);
-            }
-        }
-
-        result
+        // DNS reset is disabled for this custom Linux build.
+        Ok(())
     }
+
+}
+
+//impl Resolvconf {
+//    pub fn new() -> Result<Self> {
+//        let resolvconf_path = which("resolvconf").map_err(|_| Error::NoResolvconf)?;
+//        if Self::resolvconf_is_resolved_symlink(&resolvconf_path) {
+//            return Err(Error::ResolvconfUsesResolved);
+//        }
+//
+//        let is_dnsmasq_running = Self::is_dnsmasq_running();
+//
+//        // Check if resolvconf is managing DNS by /etc/resolv.conf
+//        if !is_dnsmasq_running
+//            && !Self::check_if_resolvconf_is_symlinked_correctly()
+//            && !Self::check_if_resolvconf_was_generated()
+//        {
+//            return Err(Error::ResolvconfNotInUse);
+//        }
+//
+//        // Check if resolvconf can manage DNS via dnsmasq
+//        if is_dnsmasq_running && Self::is_dnsmasq_configured_wrong() {
+//            return Err(Error::DnsmasqMisconfiguration);
+//        }
+//
+//        Ok(Resolvconf {
+//            record_names: HashSet::new(),
+//            resolvconf: resolvconf_path,
+//        })
+//    }
+//
+//    fn resolvconf_is_resolved_symlink(resolvconf_path: &Path) -> bool {
+//        fs::read_link(resolvconf_path)
+//            .map(|resolvconf_target| {
+//                resolvconf_target.file_name() == Some(OsStr::new("resolvectl"))
+//            })
+//            .unwrap_or_else(|_| false)
+//    }
+//
+//    pub fn set_dns(&mut self, interface: &str, servers: &[IpAddr]) -> Result<()> {
+//        let record_name = format!("{interface}.mullvad");
+//        let mut record_contents = String::new();
+//
+//        for address in servers {
+//            record_contents.push_str("nameserver ");
+//            record_contents.push_str(&address.to_string());
+//            record_contents.push('\n');
+//        }
+//
+//        let output = duct::cmd!(&self.resolvconf, "-a", &record_name)
+//            .stdin_bytes(record_contents)
+//            .stderr_capture()
+//            .unchecked()
+//            .run()
+//            .map_err(Error::RunResolvconf)?;
+//
+//        if !output.status.success() {
+//            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+//            return Err(Error::AddRecord { stderr });
+//        }
+//
+//        self.record_names.insert(record_name);
+//
+//        Ok(())
+//    }
+
+//    pub fn reset(&mut self) -> Result<()> {
+//        let mut result = Ok(());
+//
+//        for record_name in self.record_names.drain() {
+//            let output = duct::cmd!(&self.resolvconf, "-d", &record_name, "-f")
+//                .stderr_capture()
+//                .unchecked()
+//                .run()
+//                .map_err(Error::RunResolvconf)?;
+//
+//            if !output.status.success() {
+//                log::error!(
+//                    "Failed to delete 'resolvconf' record '{}':\n{}",
+//                    record_name,
+//                    String::from_utf8_lossy(&output.stderr)
+//                );
+//                result = Err(Error::DeleteRecord);
+//            }
+//        }
+//
+//        result
+//    }
 
     fn is_dnsmasq_running() -> bool {
         let pid = match fs::read_to_string("/var/run/dnsmasq/dnsmasq.pid") {
