@@ -85,7 +85,7 @@ impl Resolvconf {
         Ok(())
     }
 
-}
+
 
 //impl Resolvconf {
 //    pub fn new() -> Result<Self> {
