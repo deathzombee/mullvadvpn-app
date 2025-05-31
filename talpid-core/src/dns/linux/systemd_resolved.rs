@@ -79,5 +79,5 @@ impl SystemdResolved {
 //            .set_dns(self.tunnel_index, vec![])
 //            .await?;
 
-//    }
+    }
 }
